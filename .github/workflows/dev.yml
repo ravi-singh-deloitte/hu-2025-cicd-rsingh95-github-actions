@@ -2,27 +2,10 @@ name: Dev Image Build & Push
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - task-3
 
 jobs:
-  get-sha:
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.sha.outputs.tag }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Generate short SHA
-        id: sha
-        run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
   call-reusable:
-    needs: get-sha
     uses: ./.github/workflows/reusable-build-push-workflow.yml
     with:
-      image-tag: ${{ needs.get-sha.outputs.tag }}
       folder: dev-rsingh95
     secrets: inherit
