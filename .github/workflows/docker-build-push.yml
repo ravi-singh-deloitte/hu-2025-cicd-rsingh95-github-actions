@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-and-push:
-    uses: ./.github/workflows/reusable-docker-build-push.yml
+    uses: ./.github/workflows/reusable-docker-workflow.yml
     with:
       aws-region: us-east-1
     secrets:
