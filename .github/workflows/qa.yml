@@ -1,0 +1,20 @@
+name: CI/CD for QA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      image-tag: ${{ github.sha }}
+      docker-context: dev-rsingh95
+    secrets: inherit
+
+  push:
+    needs: build
+    uses: ./.github/workflows/reusable-push.yml
+    with:
+      image-tag: ${{ github.sha }}
+      docker-context: dev-rsingh95
+    secrets: inherit
