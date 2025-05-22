@@ -21,8 +21,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
       - name: Build and Push to Public ECR
         env:
-          ECR_REPO: hu-cicd-${{ github.actor }}-${{ matrix.env }}
+          ECR_NAMESPACE: ${{ secrets.ECR_NAMESPACE }}
         run: |
-          docker build -t $ECR_REPO ./${{ matrix.env }}-${{ github.actor }}
+          IMAGE_NAME=hu-cicd-rsingh95-${{ matrix.env }}
+          docker build -t $IMAGE_NAME ./${{ matrix.env }}-rsingh95
