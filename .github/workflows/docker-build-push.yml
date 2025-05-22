@@ -1,4 +1,4 @@
-name: docker-build-push-hu-cicd-<YOUR_NAME>
+name: docker-build-push-hu-cicd-rsingh95
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-and-push:
-    name: Build and Push Docker Image to ECR
+    name: Build and Push Docker Image to Public ECR
     runs-on: ubuntu-latest
 
     steps:
@@ -27,11 +27,12 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: ${{ secrets.AWS_REGION }}
+        aws-region: us-east-1
 
-    - name: Log in to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+    - name: Log in to Amazon Public ECR
+      run: |
+        aws ecr-public get-login-password --region us-east-1 | \
+        docker login --username AWS --password-stdin public.ecr.aws
 
     - name: Get short Git commit SHA
       id: get-sha
@@ -39,8 +40,8 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} .
+        docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} .
 
-    - name: Push Docker image to ECR
+    - name: Push Docker image to Public ECR
       run: |
-        docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }}
+        docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }}
