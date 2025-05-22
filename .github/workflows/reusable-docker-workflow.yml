@@ -1,9 +1,15 @@
-name: Reusable Docker Build and Push Workflow
+name: Reusable Docker Build and Push to Public ECR
 
 on:
   workflow_call:
     inputs:
       aws-region:
+        required: true
+        type: string
+      ecr-namespace:
+        required: true
+        type: string
+      ecr-repository:
         required: true
         type: string
     secrets:
@@ -13,32 +19,27 @@ on:
         required: true
       AWS_SESSION_TOKEN:
         required: true
-      ACCOUNT_ID:
-        required: true
-      ECR_REPOSITORY:
-        required: true
 
 jobs:
-  build-image:
+  build:
     name: Build Docker Image
     runs-on: ubuntu-latest
     outputs:
-      short_sha: ${{ steps.get-sha.outputs.short_sha }}
+      short_sha: ${{ steps.sha.outputs.short_sha }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Get short SHA
-      id: get-sha
-      run: |
-        echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+    - name: Get Git SHA
+      id: sha
+      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Build Docker image
+    - name: Build image and save
       run: |
-        IMAGE_URI=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ steps.get-sha.outputs.short_sha }}
-        docker build -t $IMAGE_URI .
-        docker save $IMAGE_URI > image.tar
+        IMAGE_TAG=public.ecr.aws/${{ inputs.ecr-namespace }}/${{ inputs.ecr-repository }}:${{ steps.sha.outputs.short_sha }}
+        docker build -t $IMAGE_TAG .
+        docker save $IMAGE_TAG > image.tar
 
     - name: Upload Docker image artifact
       uses: actions/upload-artifact@v4
@@ -46,19 +47,19 @@ jobs:
         name: docker-image
         path: image.tar
 
-  push-image:
-    name: Push Docker Image to ECR
-    needs: build-image
+  push:
+    name: Push Docker Image
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Download Docker image artifact
+    - name: Download image
       uses: actions/download-artifact@v4
       with:
         name: docker-image
         path: .
 
-    - name: Load Docker image
+    - name: Load image
       run: docker load < image.tar
 
     - name: Configure AWS credentials
@@ -69,11 +70,13 @@ jobs:
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: ${{ inputs.aws-region }}
 
-    - name: Log in to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Push Docker image
+    - name: Login to Public ECR
       run: |
-        SHORT_SHA=${{ needs.build-image.outputs.short_sha }}
-        IMAGE_URI=${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:$SHORT_SHA
-        docker push $IMAGE_URI
+        aws ecr-public get-login-password --region ${{ inputs.aws-region }} | \
+        docker login --username AWS --password-stdin public.ecr.aws
+
+    - name: Push to Public ECR
+      run: |
+        SHORT_SHA=${{ needs.build.outputs.short_sha }}
+        IMAGE_TAG=public.ecr.aws/${{ inputs.ecr-namespace }}/${{ inputs.ecr-repository }}:$SHORT_SHA
+        docker push $IMAGE_TAG

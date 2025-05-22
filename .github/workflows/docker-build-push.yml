@@ -3,7 +3,7 @@ name: docker-build-push-hu-cicd-rsingh95
 on:
   push:
     branches:
-      - task-2
+      - main
     paths:
       - 'Dockerfile'
       - 'app/**'
@@ -14,9 +14,9 @@ jobs:
     uses: ./.github/workflows/reusable-docker-workflow.yml
     with:
       aws-region: us-east-1
+      ecr-namespace: ${{ secrets.ECR_NAMESPACE }}
+      ecr-repository: ${{ secrets.ECR_REPOSITORY }}
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
-      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
