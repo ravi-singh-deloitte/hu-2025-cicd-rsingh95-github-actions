@@ -13,28 +13,37 @@ jobs:
     strategy:
       matrix:
         env: [dev, qa, prod]
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Build and Push to Public ECR
-        env:
-          ECR_NAMESPACE: ${{ secrets.ECR_NAMESPACE }}
+      - name: Log in to Amazon Public ECR
         run: |
-          IMAGE_NAME=hu-cicd-rsingh95-${{ matrix.env }}
-          IMAGE_TAG=${{ github.sha }}
-          docker build -t $IMAGE_NAME:$IMAGE_TAG ./${{ matrix.env }}-rsingh95
-          docker tag $IMAGE_NAME:$IMAGE_TAG public.ecr.aws/$ECR_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG
-          docker push public.ecr.aws/$ECR_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG
+          aws ecr-public get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Get short Git commit SHA
+        id: sha
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} ./${{ matrix.env }}-rsingh95
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }}
 
   deploy-dev:
     name: Deploy to Dev
