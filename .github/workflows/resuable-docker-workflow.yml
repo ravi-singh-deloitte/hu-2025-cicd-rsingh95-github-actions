@@ -56,3 +56,4 @@ jobs:
     - name: Push Docker Image
       run: |
         docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image-tag }}
+        

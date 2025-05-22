@@ -34,3 +34,4 @@ jobs:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      
