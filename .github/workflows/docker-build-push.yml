@@ -10,28 +10,13 @@ on:
       - '.github/workflows/docker-build-push.yml'
 
 jobs:
-  get-commit-sha:
-    runs-on: ubuntu-latest
-    outputs:
-      short_sha: ${{ steps.get-sha.outputs.short_sha }}
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Get short commit SHA
-      id: get-sha
-      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-  call-reusable:
-    needs: get-commit-sha
-    uses: ./.github/workflows/reusable-docker-workflow.yml
+  build-and-push:
+    uses: ./.github/workflows/reusable-docker-build-push.yml
     with:
-      image-tag: ${{ needs.get-commit-sha.outputs.short_sha }}
+      aws-region: us-east-1
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
       ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-      
