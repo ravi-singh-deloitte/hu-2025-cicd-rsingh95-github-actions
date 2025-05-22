@@ -2,6 +2,9 @@ name: Prod Image Build & Push
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - task-3
 
 jobs:
   get-sha:
