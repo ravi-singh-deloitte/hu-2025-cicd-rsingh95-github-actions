@@ -1,27 +1,25 @@
-name: CI/CD for Prod
+name: Prod Image Build & Push
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
-    uses: ./.github/workflows/reusable-build.yml
-    with:
-      image-tag: ${{ github.sha }}
-      docker-context: prod-rsingh95
-    secrets:
-      ECR_NAMESPACE: ${{ secrets.ECR_NAMESPACE }}
-      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  get-sha:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.sha.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  push:
-    needs: build
-    uses: ./.github/workflows/reusable-push.yml
+      - name: Generate short SHA
+        id: sha
+        run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  call-reusable:
+    needs: get-sha
+    uses: ./.github/workflows/reusable-build-push-workflow.yml
     with:
-      image-tag: ${{ github.sha }}
-      docker-context: prod-rsingh95
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      ECR_NAMESPACE: ${{ secrets.ECR_NAMESPACE }}
-      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      image-tag: ${{ needs.get-sha.outputs.tag }}
+      folder: prod-rsingh95
+    secrets: inherit
