@@ -1,18 +1,12 @@
-name: Reusable Docker Build and Push to Public ECR
+name: Reusable Docker Build and Push Workflow
 
 on:
   workflow_call:
-    inputs:
-      aws-region:
-        required: true
-        type: string
-      ecr-namespace:
-        required: true
-        type: string
-      ecr-repository:
-        required: true
-        type: string
     secrets:
+      ECR_NAMESPACE:
+        required: true
+      ECR_REPOSITORY:
+        required: true
       AWS_ACCESS_KEY_ID:
         required: true
       AWS_SECRET_ACCESS_KEY:
@@ -22,61 +16,41 @@ on:
 
 jobs:
   build:
-    name: Build Docker Image
     runs-on: ubuntu-latest
     outputs:
-      short_sha: ${{ steps.sha.outputs.short_sha }}
-
+      short_sha: ${{ steps.get-sha.outputs.short_sha }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Get Git SHA
-      id: sha
-      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build image and save
-      run: |
-        IMAGE_TAG=public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.sha.outputs.short_sha }}
-        docker build -t $IMAGE_TAG .
-        docker save $IMAGE_TAG > image.tar
+      - name: Get short Git commit SHA
+        id: get-sha
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Upload Docker image artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: docker-image
-        path: image.tar
+      - name: Build Docker image
+        run: |
+          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.get-sha.outputs.short_sha }} .
 
   push:
-    name: Push Docker Image
-    needs: build
     runs-on: ubuntu-latest
-
+    needs: build
     steps:
-    - name: Download image
-      uses: actions/download-artifact@v4
-      with:
-        name: docker-image
-        path: .
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
 
-    - name: Load image
-      run: docker load < image.tar
+      - name: Log in to Amazon Public ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | \
+          docker login --username AWS --password-stdin public.ecr.aws
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: ${{ inputs.aws-region }}
-
-    - name: Login to Public ECR
-      run: |
-        aws ecr-public get-login-password --region ${{ inputs.aws-region }} | \
-        docker login --username AWS --password-stdin public.ecr.aws
-
-    - name: Push to Public ECR
-      run: |
-        SHORT_SHA=${{ needs.build.outputs.short_sha }}
-        IMAGE_TAG=public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:$SHORT_SHA
-        docker push $IMAGE_TAG
+      - name: Push Docker image to Public ECR
+        run: |
+          docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ needs.build.outputs.short_sha }}

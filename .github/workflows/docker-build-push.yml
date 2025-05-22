@@ -12,8 +12,6 @@ on:
 jobs:
   build-and-push:
     uses: ./.github/workflows/reusable-docker-workflow.yml
-    with:
-      aws-region: us-east-1
     secrets:
       ECR_NAMESPACE: ${{ secrets.ECR_NAMESPACE }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
