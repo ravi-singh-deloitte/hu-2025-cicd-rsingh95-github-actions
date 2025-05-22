@@ -13,18 +13,18 @@ on:
       AWS_ACCESS_KEY_ID:
       AWS_SECRET_ACCESS_KEY:
       AWS_SESSION_TOKEN:
-      AWS_REGION:
-      ACCOUNT_ID:
+      ECR_NAMESPACE:
+      ECR_REPOSITORY:
 
 jobs:
   push:
     runs-on: ubuntu-latest
     steps:
-      - name: Log in to Amazon ECR
+      - name: Log in to Amazon Public ECR
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} |
-          docker login --username AWS --password-stdin ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          aws ecr-public get-login-password --region us-east-1 | \
+          docker login --username AWS --password-stdin public.ecr.aws
 
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ inputs.docker-context }}:${{ inputs.image-tag }}
+          docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image-tag }}

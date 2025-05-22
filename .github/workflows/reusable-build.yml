@@ -10,11 +10,8 @@ on:
         required: true
         type: string
     secrets:
-      AWS_ACCESS_KEY_ID:
-      AWS_SECRET_ACCESS_KEY:
-      AWS_SESSION_TOKEN:
-      AWS_REGION:
-      ACCOUNT_ID:
+      ECR_NAMESPACE:
+      ECR_REPOSITORY:
 
 jobs:
   build:
@@ -25,11 +22,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} |
-          docker login --username AWS --password-stdin ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ inputs.docker-context }}:${{ inputs.image-tag }} ${{ inputs.docker-context }}
+          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ inputs.image-tag }} ${{ inputs.docker-context }}
