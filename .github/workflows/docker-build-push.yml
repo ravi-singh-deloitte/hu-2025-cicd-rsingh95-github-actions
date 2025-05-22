@@ -1,47 +1,36 @@
-name: docker-build-push-hu-cicd-rsingh95
+name: docker-build-push-hu-cicd-<YOUR_NAME>
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'Dockerfile'
       - 'app/**'
       - '.github/workflows/docker-build-push.yml'
-    branches:
-      - main
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker Image to Public ECR
+  get-commit-sha:
     runs-on: ubuntu-latest
-
+    outputs:
+      short_sha: ${{ steps.get-sha.outputs.short_sha }}
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: us-east-1
-
-    - name: Log in to Amazon Public ECR
-      run: |
-        aws ecr-public get-login-password --region us-east-1 | \
-        docker login --username AWS --password-stdin public.ecr.aws
-
-    - name: Get short Git commit SHA
+    - name: Get short commit SHA
       id: get-sha
-      run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Build Docker image
-      run: |
-        docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} .
-
-    - name: Push Docker image to Public ECR
-      run: |
-        docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }}
+  call-reusable:
+    needs: get-commit-sha
+    uses: ./.github/workflows/reusable-docker-workflow.yml
+    with:
+      image-tag: ${{ needs.get-commit-sha.outputs.short_sha }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
