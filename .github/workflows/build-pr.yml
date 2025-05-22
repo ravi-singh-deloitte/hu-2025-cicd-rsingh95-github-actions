@@ -1,34 +1,28 @@
-name: PR Build Validation
+name: PR Build Workflow
 
 on:
   pull_request:
-    branches: [ main ]
     paths:
-      - 'dev-rsingh95/**'
-      - 'qa-rsingh95/**'
-      - 'prod-rsingh95/**'
+      - '**/*.py'
 
 jobs:
-  build-dev:
-    if: contains(github.event.pull_request.labels.*.name, 'dev') || github.event.pull_request.head.ref == 'dev'
+  build:
+    name: Build Docker Images for All Envs
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker Image
-        run: docker build -t hu-cicd-rsingh95-dev:${{ github.sha }} -f dev-rsingh95/Dockerfile dev-rsingh95/
 
-  build-qa:
-    if: contains(github.event.pull_request.labels.*.name, 'qa') || github.event.pull_request.head.ref == 'qa'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker Image
-        run: docker build -t hu-cicd-rsingh95-qa:${{ github.sha }} -f qa-rsingh95/Dockerfile qa-rsingh95/
+    strategy:
+      matrix:
+        env: [dev, qa, prod]
 
-  build-prod:
-    if: contains(github.event.pull_request.labels.*.name, 'prod') || github.event.pull_request.head.ref == 'prod'
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker Image
-        run: docker build -t hu-cicd-rsingh95-prod:${{ github.sha }} -f prod-rsingh95/Dockerfile prod-rsingh95/
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push to Public ECR
+        env:
+          ECR_REPO: hu-cicd-${{ github.actor }}-${{ matrix.env }}
+        run: |
+          docker build -t $ECR_REPO ./${{ matrix.env }}-${{ github.actor }}
