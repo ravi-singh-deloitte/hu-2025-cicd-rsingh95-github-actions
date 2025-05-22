@@ -1,0 +1,71 @@
+name: Main Branch Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+      - name: Build and Push Dev Image
+        if: contains(github.event.head_commit.message, '[deploy dev]')
+        run: |
+          docker build -t hu-cicd-rsingh95-dev:${{ github.sha }} -f dev-rsingh95/Dockerfile dev-rsingh95/
+          docker tag hu-cicd-rsingh95-dev:${{ github.sha }} public.ecr.aws/<ECR_ID>/hu-cicd-rsingh95-dev:${{ github.sha }}
+          docker push public.ecr.aws/<ECR_ID>/hu-cicd-rsingh95-dev:${{ github.sha }}
+      - name: Build and Push QA Image
+        if: contains(github.event.head_commit.message, '[deploy qa]')
+        run: |
+          docker build -t hu-cicd-rsingh95-qa:${{ github.sha }} -f qa-rsingh95/Dockerfile qa-rsingh95/
+          docker tag hu-cicd-rsingh95-qa:${{ github.sha }} public.ecr.aws/<ECR_ID>/hu-cicd-rsingh95-qa:${{ github.sha }}
+          docker push public.ecr.aws/<ECR_ID>/hu-cicd-rsingh95-qa:${{ github.sha }}
+      - name: Build and Push Prod Image
+        if: contains(github.event.head_commit.message, '[deploy prod]')
+        run: |
+          docker build -t hu-cicd-rsingh95-prod:${{ github.sha }} -f prod-rsingh95/Dockerfile prod-rsingh95/
+          docker tag hu-cicd-rsingh95-prod:${{ github.sha }} public.ecr.aws/<ECR_ID>/hu-cicd-rsingh95-prod:${{ github.sha }}
+          docker push public.ecr.aws/<ECR_ID>/hu-cicd-rsingh95-prod:${{ github.sha }}
+
+  deploy-dev:
+    needs: build
+    if: contains(github.event.head_commit.message, '[deploy dev]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Dev
+        run: |
+          echo "Deploying dev image to environment..."
+
+  deploy-qa:
+    needs: build
+    if: contains(github.event.head_commit.message, '[deploy qa]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.token }}
+          approvers: ravi-singh-deloitte
+          minimum-approvals: 1
+      - name: Deploy to QA
+        run: |
+          echo "Deploying qa image to environment..."
+
+  deploy-prod:
+    needs: build
+    if: contains(github.event.head_commit.message, '[deploy prod]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.token }}
+          approvers: ravi-singh-deloitte
+          minimum-approvals: 1
+      - name: Deploy to Prod
+        run: |
+          echo "Deploying prod image to environment..."
