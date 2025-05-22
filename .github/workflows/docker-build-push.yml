@@ -1,5 +1,4 @@
 name: docker-build-push-hu-cicd-rsingh95
-
 on:
   push:
     branches:
