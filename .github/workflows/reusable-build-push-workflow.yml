@@ -2,6 +2,10 @@ name: Reusable Build & Push Workflow
 
 on:
   workflow_call:
+    inputs:
+      folder:
+        required: true
+        type: string
     secrets:
       AWS_ACCESS_KEY_ID: {}
       AWS_SECRET_ACCESS_KEY: {}
@@ -13,6 +17,10 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.folder }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
