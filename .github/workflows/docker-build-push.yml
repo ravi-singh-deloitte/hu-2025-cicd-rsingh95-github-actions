@@ -3,7 +3,7 @@ name: docker-build-push-hu-cicd-<YOUR_NAME>
 on:
   push:
     branches:
-      - main
+      - task-2
     paths:
       - 'Dockerfile'
       - 'app/**'
