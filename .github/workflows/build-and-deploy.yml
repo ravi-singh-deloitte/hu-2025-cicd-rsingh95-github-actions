@@ -1,4 +1,4 @@
-name: Build & Deploy Workflow on merge
+name: Build & Deploy Workflow on Merge
 
 on:
   push:
