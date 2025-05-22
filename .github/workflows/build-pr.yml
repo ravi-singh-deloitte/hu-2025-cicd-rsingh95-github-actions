@@ -23,10 +23,14 @@ jobs:
 
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          region: us-east-1
 
       - name: Build and Push to Public ECR
         env:
           ECR_NAMESPACE: ${{ secrets.ECR_NAMESPACE }}
         run: |
           IMAGE_NAME=hu-cicd-rsingh95-${{ matrix.env }}
-          docker build -t $IMAGE_NAME ./${{ matrix.env }}-rsingh95
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t $IMAGE_NAME:$IMAGE_TAG ./${{ matrix.env }}-rsingh95
+          docker tag $IMAGE_NAME:$IMAGE_TAG public.ecr.aws/$ECR_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG
