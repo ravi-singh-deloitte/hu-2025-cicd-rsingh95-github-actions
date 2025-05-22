@@ -37,7 +37,7 @@ jobs:
 
     - name: Build image and save
       run: |
-        IMAGE_TAG=public.ecr.aws/${{ inputs.ecr-namespace }}/${{ inputs.ecr-repository }}:${{ steps.sha.outputs.short_sha }}
+        IMAGE_TAG=public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.sha.outputs.short_sha }}
         docker build -t $IMAGE_TAG .
         docker save $IMAGE_TAG > image.tar
 
@@ -78,5 +78,5 @@ jobs:
     - name: Push to Public ECR
       run: |
         SHORT_SHA=${{ needs.build.outputs.short_sha }}
-        IMAGE_TAG=public.ecr.aws/${{ inputs.ecr-namespace }}/${{ inputs.ecr-repository }}:$SHORT_SHA
+        IMAGE_TAG=public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:$SHORT_SHA
         docker push $IMAGE_TAG
