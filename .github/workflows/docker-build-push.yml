@@ -11,6 +11,7 @@ on:
 
 jobs:
   build-and-push:
+    name: Build and Push Docker Image to ECR
     runs-on: ubuntu-latest
 
     steps:
@@ -25,6 +26,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Log in to Amazon ECR
@@ -32,7 +34,7 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Get short Git commit SHA
-      id: vars
+      id: get-sha
       run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - name: Build Docker image
