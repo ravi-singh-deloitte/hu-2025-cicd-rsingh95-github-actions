@@ -49,6 +49,9 @@ jobs:
     name: Deploy to Dev
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push'
+    environment:
+      name: Dev
     steps:
       - name: Simulate Deploy to Dev
         run: echo "Deploying to Dev..."
@@ -57,8 +60,11 @@ jobs:
     name: Deploy to QA
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push'
     environment:
       name: QA
+      reviewers: 
+        - ravi-singh-deloitte
     steps:
       - name: Simulate Deploy to QA
         run: echo "Deploying to QA..."
@@ -67,8 +73,11 @@ jobs:
     name: Deploy to Prod
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push'
     environment:
       name: Prod
+      reviewers: 
+        - ravi-singh-deloitte
     steps:
       - name: Simulate Deploy to Prod
         run: echo "Deploying to Prod..."
