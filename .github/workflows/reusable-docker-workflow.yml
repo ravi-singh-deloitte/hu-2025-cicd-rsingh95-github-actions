@@ -13,6 +13,8 @@ on:
         required: true
       AWS_SESSION_TOKEN:
         required: true
+      TEAMS_WEBHOOK_URL:
+        required: true
 
 jobs:
   build:
@@ -77,9 +79,11 @@ jobs:
 
       - name: Notify Teams of Build and Push Status
         if: always()
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: |
           STATUS="${{ job.status }}"
           MESSAGE="**GitHub Actions Notification**\n\n**Repository**: ${{ github.repository }}\n**Branch**: ${{ github.ref_name }}\n**Commit**: ${{ github.sha }}\n**Job**: Docker Build & Push\n**Status**: $STATUS"
           curl -H 'Content-Type: application/json' \
                -d "{\"text\": \"$MESSAGE\"}" \
-               ${{ secrets.TEAMS_WEBHOOK_URL }}
+               "$TEAMS_WEBHOOK_URL"
