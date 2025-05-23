@@ -1,25 +1,18 @@
-name: Reusable Build & Push Workflow
+name: PR Build Workflow
 
 on:
-  workflow_call:
-    inputs:
-      folder:
-        required: true
-        type: string
-    secrets:
-      AWS_ACCESS_KEY_ID: {}
-      AWS_SECRET_ACCESS_KEY: {}
-      AWS_SESSION_TOKEN: {}
-      AWS_REGION: {}
-      ECR_NAMESPACE: {}
-      ECR_REPOSITORY: {}
+  pull_request:
+    paths:
+      - '**/*.py'
 
 jobs:
-  build-and-push:
+  build:
+    name: Build Docker Images for All Envs
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.folder }}
+
+    strategy:
+      matrix:
+        env: [dev, qa, prod]
 
     steps:
       - name: Checkout code
@@ -47,8 +40,4 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} .
-
-      - name: Push Docker image to ECR
-        run: |
-          docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ env.SHORT_SHA }}
+          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ matrix.env }}-${{ env.SHORT_SHA }} ./${{ matrix.env }}-rsingh95
