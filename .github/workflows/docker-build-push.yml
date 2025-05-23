@@ -3,7 +3,7 @@ name: docker-build-push-hu-cicd-rsingh95
 on:
   push:
     branches:
-      - task-5
+      - task-5th
     paths:
       - 'Dockerfile'
       - 'app/**'
