@@ -74,3 +74,12 @@ jobs:
       - name: Push Docker image to Public ECR
         run: |
           docker push public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ needs.build.outputs.short_sha }}
+
+      - name: Notify Teams of Build and Push Status
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          MESSAGE="**GitHub Actions Notification**\n\n**Repository**: ${{ github.repository }}\n**Branch**: ${{ github.ref_name }}\n**Commit**: ${{ github.sha }}\n**Job**: Docker Build & Push\n**Status**: $STATUS"
+          curl -H 'Content-Type: application/json' \
+               -d "{\"text\": \"$MESSAGE\"}" \
+               ${{ secrets.TEAMS_WEBHOOK_URL }}
