@@ -40,4 +40,4 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ matrix.env }}:${{ env.SHORT_SHA }} ./${{ matrix.env }}-rsingh95
+          docker build -t public.ecr.aws/${{ secrets.ECR_NAMESPACE }}/${{ secrets.ECR_REPOSITORY }}:${{ matrix.env }}-${{ env.SHORT_SHA }} ./${{ matrix.env }}-rsingh95
