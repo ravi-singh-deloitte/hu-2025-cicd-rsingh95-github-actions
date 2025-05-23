@@ -13,8 +13,6 @@ on:
         required: true
       AWS_SESSION_TOKEN:
         required: true
-      TEAMS_WEBHOOK_URL:
-        required: true
 
 jobs:
   build:
@@ -79,11 +77,9 @@ jobs:
 
       - name: Notify Teams of Build and Push Status
         if: always()
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: |
           STATUS="${{ job.status }}"
           MESSAGE="**GitHub Actions Notification**\n\n**Repository**: ${{ github.repository }}\n**Branch**: ${{ github.ref_name }}\n**Commit**: ${{ github.sha }}\n**Job**: Docker Build & Push\n**Status**: $STATUS"
           curl -H 'Content-Type: application/json' \
                -d "{\"text\": \"$MESSAGE\"}" \
-               "$TEAMS_WEBHOOK_URL"
+               "https://deloitte.webhook.office.com/webhookb2/d6ec191f-9653-4bc6-9995-e7bc47ca8037@36da45f1-dd2c-4d1f-af13-5abe46b99921/IncomingWebhook/9ab0dca3a3f243e8a075aee0cb97ade7/ba21d169-adfc-4a72-ab8b-2a830d095170/V2x-ATIod4ff6i6QRs5Qa6ovyr8Z9VbfOx9TAeBrTFiNM1"
